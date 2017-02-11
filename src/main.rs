@@ -1,7 +1,8 @@
 use std::io;
 use std::iter::Peekable;
 
-// DEFINE DATA TYPE
+
+// 0. DEFINE DATA TYPE
 #[derive(Debug)]
 enum AST {
     Num(i64),
@@ -10,8 +11,23 @@ enum AST {
     Cons { head: Box<AST>, tail: Box<AST> }
 }
 
+
+// 2. PARSE FUNCTIONS
+
+fn strip_ws(iter : &mut Peekable<std::str::Chars>) {
+    loop {
+        match iter.peek() {
+            Some(&' ')  => iter.next(),
+            Some(&'\n') => iter.next(),
+            Some(&'\t') => iter.next(),
+            _           => break,
+        };
+    };
+}
+
 fn parse_sexpr(iter : &mut Peekable<std::str::Chars>) -> AST {
     println!("parse_sexpr entry");
+    strip_ws(iter);
     let result = match *(iter.peek().unwrap()){
         ')'       => panic!("invalid s-expr: unexpected ')'"),
         '('       => { iter.next(); parse_cons(iter) },
@@ -24,9 +40,10 @@ fn parse_sexpr(iter : &mut Peekable<std::str::Chars>) -> AST {
 
 fn parse_num(iter : &mut Peekable<std::str::Chars>) -> AST {
     let mut decimal = String::new();
-    while let Some(n@'0'...'9') = iter.next() {
+    while let Some(&n @ '0'...'9') = iter.peek() {
         decimal.push(n);
-    }
+        iter.next();
+    };
 
     AST::Num(decimal.parse::<i64>().unwrap()) // Num : i64 -> AST
 }
@@ -53,6 +70,7 @@ fn parse_word(iter : &mut Peekable<std::str::Chars>) -> AST {
 }
 
 fn parse_cons(iter : &mut Peekable<std::str::Chars>) -> AST {
+    strip_ws(iter);
     println!("parse_cons entry: {:?}",iter.peek());
     let result = match *(iter.peek().unwrap()) {
         ')' => {iter.next(); AST::Nil},
@@ -64,6 +82,12 @@ fn parse_cons(iter : &mut Peekable<std::str::Chars>) -> AST {
     result
 }
 
+
+// 3. EVALUATE FUNCTIONS
+// TODO
+
+
+// 4. FORMAT FUNCTIONS
 fn format_ast (tree : AST) -> String { // Show
    // match against each case; recurse for every node in AST::Cons 
    match tree {
@@ -76,22 +100,23 @@ fn format_ast (tree : AST) -> String { // Show
 }
 
 
+// MAIN //
 fn main() {
-    // INPUT: I -> String
+    // 1. INPUT: I -> String
     println!("Please input an S-Expression:");
     let mut sexpr = String::new();
     io::stdin().read_line(&mut sexpr)
         .expect("failed to read line");
 
-    // PARSE: String -> AST
+    // 2. PARSE: String -> AST
     let sexpr = sexpr; // make sexpr immutable, now that we will only iter
                        // todo: turn it into a str; consider simpler iter
     let mut iter = sexpr.chars().peekable(); // create iter
     let tree : AST = parse_sexpr(&mut iter);
 
-    // EVALUATE: AST -> AST
+    // 3. EVALUATE: AST -> AST
     //TODO
 
-    // OUTPUT: AST -> String -> O
+    // 4. OUTPUT: AST -> String -> O
     println!("{}", format_ast(tree));
 }
