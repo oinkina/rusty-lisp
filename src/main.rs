@@ -2,6 +2,7 @@ use std::io;
 use std::iter::Peekable;
 
 // DEFINE DATA TYPE
+#[derive(Debug)]
 enum AST {
     Num(i64),
     Word(String),
@@ -10,18 +11,15 @@ enum AST {
 }
 
 fn parse_sexpr(iter : &mut Peekable<std::str::Chars>) -> AST {
-    //TODO make iter_peek nicer
-//    let iter_peek = match iter.peek() { // match on what next char would be; don't "consume" yet
-//        None     => panic!(),
- //       Some(&x) => x, // peek returns Some(&x); let iter_peek = x
-//    };
-
-    match *(iter.peek().unwrap()){
+    println!("parse_sexpr entry");
+    let result = match *(iter.peek().unwrap()){
         ')'       => panic!("invalid s-expr: unexpected ')'"),
         '('       => { iter.next(); parse_cons(iter) },
         '0'...'9' =>                parse_num(iter),
         _         =>                parse_word(iter),
-    }
+    };
+    println!("parse_sexpr exit: {:?}", result);
+    result
 }
 
 fn parse_num(iter : &mut Peekable<std::str::Chars>) -> AST {
@@ -34,47 +32,56 @@ fn parse_num(iter : &mut Peekable<std::str::Chars>) -> AST {
 }
 
 fn parse_word(iter : &mut Peekable<std::str::Chars>) -> AST {
+    println!("parse_word entry");
     let mut word = String::new();
     loop { // loops as long as there are chars and no break-ing char
-        let s = match iter.next() {
-            None       => break,
-            Some(' ')  => break,
-            Some('\n') => break,
-            Some('\t') => break,
-            Some('(')  => break,
-            Some(')')  => break,
-            Some(s@_)  => s
+        let s = match iter.peek() {
+            None        => break,
+            Some(&' ')  => break,
+            Some(&'\n') => break,
+            Some(&'\t') => break,
+            Some(&'(')  => break,
+            Some(&')')  => break,
+            Some(&s)    => s
         };
         word.push(s);
+        iter.next();
     }
 
+    println!("parse_word exit: {:?}",word);
     AST::Word(word) // Word : String -> AST
 }
 
 fn parse_cons(iter : &mut Peekable<std::str::Chars>) -> AST {
-    unimplemented!();
-//    let iter_peek = match iter.peek() { // match on what next char would be; don't "consume" yet
-//        None     => panic!(),
-//        Some(&x) => x, // peek returns Some(&x); let iter_peek = x
-//    };
-//
-//    match iter.peek().unwrap() {
-//        None => panic!("unexpected end of input"), //TODO fill in other panic msgs
-//        Some(')') => AST::Nil,
-//        Some(head@_) => { parse_sexpr(iter); parse_cons(iter) },
-//    }
+    println!("parse_cons entry: {:?}",iter.peek());
+    let result = match *(iter.peek().unwrap()) {
+        ')' => {iter.next(); AST::Nil},
+        _   => { let head =Box::new(parse_sexpr(iter));
+                 let tail = Box::new(parse_cons(iter));
+                 AST::Cons { head : head, tail : tail }},
+    };
+    println!("parse_cons exit: {:?}",result);
+    result
 }
 
-fn print_ast(tree : AST) {
-    unimplemented!();
+fn format_ast (tree : AST) -> String { // Show
+   // match against each case; recurse for every node in AST::Cons 
+   match tree {
+       AST::Nil => format!("[]"),
+       AST::Num(n@_) => format!("{}", n),
+       AST::Word(w@_) => format!("{}", w),
+       AST::Cons{head:h@_, tail:t@_} => format!("( {0} : {1} )", format_ast(*h), format_ast(*t)),
+       // note that Rust compiler accepts that all cases are considered
+   }
 }
 
 
 fn main() {
     // INPUT: I -> String
-    println!("What string do you want to parse?");
+    println!("Please input an S-Expression:");
     let mut sexpr = String::new();
-    io::stdin().read_line(&mut sexpr);
+    io::stdin().read_line(&mut sexpr)
+        .expect("failed to read line");
 
     // PARSE: String -> AST
     let sexpr = sexpr; // make sexpr immutable, now that we will only iter
@@ -86,5 +93,5 @@ fn main() {
     //TODO
 
     // OUTPUT: AST -> String -> O
-    print_ast(tree);
+    println!("{}", format_ast(tree));
 }
