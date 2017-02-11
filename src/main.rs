@@ -17,12 +17,11 @@ enum AST {
 fn strip_ws(iter : &mut Peekable<std::str::Chars>) {
     loop {
         match iter.peek() {
-            Some(&' ')  => iter.next(),
-            Some(&'\n') => iter.next(),
-            Some(&'\t') => iter.next(),
-            _           => break,
-        };
-    };
+            Some(&ws) => match ws {
+                ' '|'\n'|'\t'  => iter.next(),
+                _              => break,
+            }, None   => break,
+        }; };
 }
 
 fn parse_sexpr(iter : &mut Peekable<std::str::Chars>) -> AST {
@@ -54,13 +53,10 @@ fn parse_word(iter : &mut Peekable<std::str::Chars>) -> AST {
     loop { // loops as long as there are chars and no break-ing char
         let s = match iter.peek() {
             None        => break,
-            Some(&' ')  => break,
-            Some(&'\n') => break,
-            Some(&'\t') => break,
-            Some(&'(')  => break,
-            Some(&')')  => break,
-            Some(&s)    => s
-        };
+            Some(&s)    => match s {
+                ' '|'\n'|'\t'|'('|')'=> break,
+                _                    => s,
+            } };
         word.push(s);
         iter.next();
     }
