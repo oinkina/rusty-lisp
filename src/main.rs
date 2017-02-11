@@ -25,16 +25,13 @@ fn strip_ws(iter : &mut Peekable<std::str::Chars>) {
 }
 
 fn parse_sexpr(iter : &mut Peekable<std::str::Chars>) -> AST {
-    println!("parse_sexpr entry");
     strip_ws(iter);
-    let result = match *(iter.peek().unwrap()){
+    match *(iter.peek().unwrap()){
         ')'       => panic!("invalid s-expr: unexpected ')'"),
         '('       => { iter.next(); parse_cons(iter) },
         '0'...'9' =>                parse_num(iter),
         _         =>                parse_word(iter),
-    };
-    println!("parse_sexpr exit: {:?}", result);
-    result
+    }
 }
 
 fn parse_num(iter : &mut Peekable<std::str::Chars>) -> AST {
@@ -48,7 +45,6 @@ fn parse_num(iter : &mut Peekable<std::str::Chars>) -> AST {
 }
 
 fn parse_word(iter : &mut Peekable<std::str::Chars>) -> AST {
-    println!("parse_word entry");
     let mut word = String::new();
     loop { // loops as long as there are chars and no break-ing char
         let s = match iter.peek() {
@@ -61,21 +57,17 @@ fn parse_word(iter : &mut Peekable<std::str::Chars>) -> AST {
         iter.next();
     }
 
-    println!("parse_word exit: {:?}",word);
     AST::Word(word) // Word : String -> AST
 }
 
 fn parse_cons(iter : &mut Peekable<std::str::Chars>) -> AST {
     strip_ws(iter);
-    println!("parse_cons entry: {:?}",iter.peek());
-    let result = match *(iter.peek().unwrap()) {
+    match *(iter.peek().unwrap()) {
         ')' => {iter.next(); AST::Nil},
         _   => { let head =Box::new(parse_sexpr(iter));
                  let tail = Box::new(parse_cons(iter));
                  AST::Cons { head : head, tail : tail }},
-    };
-    println!("parse_cons exit: {:?}",result);
-    result
+    }
 }
 
 
