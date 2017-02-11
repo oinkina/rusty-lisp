@@ -71,7 +71,31 @@ fn parse_cons(iter : &mut Peekable<std::str::Chars>) -> AST {
 }
 
 
-// 3. EVALUATE FUNCTIONS
+// 3A. EVALUATE FUNCTIONS
+fn eval_tree(tree : AST) -> AST {
+    match eval_flatten_heads(tree) {
+        AST::Cons{head:h, tail:t} => match *h {
+            AST::Word(w) => {
+                match w.as_ref() {
+                    "+" => unimplemented!(), //TODO
+                    _ => panic!("undefined function")
+                }
+            },
+            _ => panic!("tried to apply a non-word"),
+        },
+        x => x
+    }
+}
+fn eval_flatten_heads(tree : AST) -> AST {
+    match tree {
+        AST::Cons{head:h, tail:t} => AST::Cons{
+            head: Box::new(eval_tree(*h)),
+            tail: Box::new(eval_flatten_heads(*t))},
+        _ => tree,
+    }
+}
+
+// 3B. KEYWORD IMPLEMENTATIONS
 // TODO
 
 
@@ -102,8 +126,9 @@ fn main() {
     let tree : AST = parse_sexpr(&mut iter);
 
     // 3. EVALUATE: AST -> AST
-    //TODO
+    let tree = eval_tree(tree);
 
     // 4. OUTPUT: AST -> String -> O
+    println!("{:?}", tree);
     println!("{}", format_ast(tree));
 }
