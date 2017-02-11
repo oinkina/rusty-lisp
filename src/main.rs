@@ -80,9 +80,9 @@ fn format_ast (tree : AST) -> String { // Show
    // match against each case; recurse for every node in AST::Cons 
    match tree {
        AST::Nil => format!("[]"),
-       AST::Num(n@_) => format!("{}", n),
-       AST::Word(w@_) => format!("{}", w),
-       AST::Cons{head:h@_, tail:t@_} => format!("( {0} : {1} )", format_ast(*h), format_ast(*t)),
+       AST::Num(n) => format!("{}", n),
+       AST::Word(w) => format!("{}", w),
+       AST::Cons{head:h, tail:t} => format!("( {0} : {1} )", format_ast(*h), format_ast(*t)),
        // note that Rust compiler accepts that all cases are considered
    }
 }
@@ -98,7 +98,6 @@ fn main() {
 
     // 2. PARSE: String -> AST
     let sexpr = sexpr; // make sexpr immutable, now that we will only iter
-                       // todo: turn it into a str; consider simpler iter
     let mut iter = sexpr.chars().peekable(); // create iter
     let tree : AST = parse_sexpr(&mut iter);
 
