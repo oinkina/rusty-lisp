@@ -77,8 +77,8 @@ fn eval_tree(tree : AST) -> AST {
         AST::Cons{head:h, tail:t} => match *h {
             AST::Word(w) => {
                 match w.as_ref() {
-                    "+" => unimplemented!(), //TODO
-                    _ => panic!("undefined function")
+                    "+"|"plus"|"add" => AST::Num(eval_plus(*t)),
+                    _   => panic!("undefined function")
                 }
             },
             _ => panic!("tried to apply a non-word"),
@@ -96,8 +96,15 @@ fn eval_flatten_heads(tree : AST) -> AST {
 }
 
 // 3B. KEYWORD IMPLEMENTATIONS
-// TODO
-
+fn eval_plus(tree : AST) -> i64 {
+    match tree {
+        AST::Nil => 0,
+        AST::Cons{head:h, tail:t} => match *h {
+            AST::Num(n) => n + eval_plus(*t),
+            x@_         => panic!("expected a number; got {:?}",x),},
+        _ => panic!("ill-formed expr"),
+    }
+}
 
 // 4. FORMAT FUNCTIONS
 fn format_ast (tree : AST) -> String { // Show
