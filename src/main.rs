@@ -77,11 +77,15 @@ fn eval_tree(tree : AST) -> AST {
         AST::Cons{head:h, tail:t} => match *h {
             AST::Word(w) => {
                 match w.as_ref() {
-                    "+"|"plus"|"add" => AST::Num(eval_plus(*t)),
-                    _   => panic!("undefined function")
+                    "+"|"plus" |"add" => AST::Num(eval_add(*t)),
+                    "*"|"times"|"mul" => AST::Num(eval_mul(*t)),
+                    "list"            => *t,
+                    "first"           => eval_first(*t),
+                    "tail"            => eval_tail(*t),
+                    _                 => panic!("expected a keyword; got undefined function '{}'", w),
                 }
             },
-            _ => panic!("tried to apply a non-word"),
+            err => panic!("expected word; got {:?}", err),
         },
         x => x
     }
@@ -96,23 +100,55 @@ fn eval_flatten_heads(tree : AST) -> AST {
 }
 
 // 3B. KEYWORD IMPLEMENTATIONS
-fn eval_plus(tree : AST) -> i64 {
+fn eval_add(tree : AST) -> i64 {
     match tree {
-        AST::Nil => 0,
+        AST::Nil                  => 0,
         AST::Cons{head:h, tail:t} => match *h {
-            AST::Num(n) => n + eval_plus(*t),
-            x@_         => panic!("expected a number; got {:?}",x),},
-        _ => panic!("ill-formed expr"),
+            AST::Num(n) => n + eval_add(*t),
+            x           => panic!("expected a number; got {:?}", x),},
+        _                         => panic!("ill-formed expr"),
     }
 }
+
+fn eval_mul(tree : AST) -> i64 {
+    match tree {
+        AST::Nil                       => 1,
+        AST::Cons {head : h, tail : t} => match *h {
+            AST::Num(n) => n * eval_mul(*t),
+            _           => panic!("isn't num"),
+        },
+        _                              => panic!("ill formed"),
+    }
+}
+
+fn eval_first(tree : AST) -> AST {
+    match tree {
+        AST::Cons { head: h, tail: _ } => match *h {
+            AST::Cons { head: h2, tail: _ } => *h2,
+            _                              => panic!("not a list"),
+        },
+        _                             => panic!("not a list"),
+    }
+}
+fn eval_tail(tree : AST) -> AST {
+    match tree {
+        AST::Cons { head: h, tail: _ } => match *h {
+            AST::Cons { head: _, tail: t} => *t,
+            _                             => panic!("not a list"),
+        },
+        _                              => panic!("not a list"),
+    }
+}
+
+
 
 // 4. FORMAT FUNCTIONS
 fn format_ast (tree : AST) -> String { // Show
    // match against each case; recurse for every node in AST::Cons 
    match tree {
-       AST::Nil => format!("[]"),
-       AST::Num(n) => format!("{}", n),
-       AST::Word(w) => format!("{}", w),
+       AST::Nil                  => format!("[]"),
+       AST::Num(n)               => format!("{}", n),
+       AST::Word(w)              => format!("{}", w),
        AST::Cons{head:h, tail:t} => format!("( {0} : {1} )", format_ast(*h), format_ast(*t)),
        // note that Rust compiler accepts that all cases are considered
    }
